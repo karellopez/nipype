@@ -456,8 +456,12 @@ class Dcm2niix(CommandLine):
         filenames = []
         for line in stdout.split("\n"):
             if line.startswith("Convert "):  # output
-                fname = str(re.search(r"\S+/\S+", line).group(0))
-                filenames.append(os.path.abspath(fname))
+                # Accept both forward and backslashes so Windows paths are
+                # correctly captured when parsing the converter output.
+                match = re.search(r"\S+[\\/]\S+", line)
+                if match:
+                    fname = str(match.group(0))
+                    filenames.append(os.path.abspath(fname))
         return filenames
 
     def _parse_files(self, filenames):
