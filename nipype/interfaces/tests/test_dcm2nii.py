@@ -1,3 +1,4 @@
+import os
 import pytest
 
 
@@ -30,3 +31,11 @@ def test_search_files(tmp_path, fname, extension, search_crop):
             assert f in (str(test_cropped_file), str(test_file))
         else:
             assert str(test_file) == f
+
+
+def test_parse_stdout_windows_path():
+    """Ensure _parse_stdout handles backslash-separated paths."""
+    dcm = dcm2nii.Dcm2niix()
+    line = "Convert 1 C:\\data\\file.nii"
+    paths = dcm._parse_stdout(line)
+    assert paths == [os.path.abspath("C:\\data\\file.nii")]

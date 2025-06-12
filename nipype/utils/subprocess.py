@@ -8,6 +8,9 @@ import errno
 import select
 import locale
 import datetime
+import queue
+import threading
+import time
 from pathlib import Path
 from subprocess import Popen, STDOUT, PIPE
 from .filemanip import canonicalize_env, read_stream
@@ -121,34 +124,74 @@ def run_command(runtime, output=None, timeout=0.01, write_cmdline=False):
     if output == "stream":
         streams = [Stream("stdout", proc.stdout), Stream("stderr", proc.stderr)]
 
-        def _process(drain=0):
-            try:
-                res = select.select(streams, [], [], timeout)
-            except OSError as e:
-                iflogger.info(e)
-                if e.errno == errno.EINTR:
-                    return
+        if os.name == "nt":
+            # select.select() does not work with regular pipes on Windows.
+            # Use a small reader thread per stream to push data into a queue
+            # so we can poll for updates similar to the POSIX implementation.
+            q = queue.Queue()
+
+            def _reader(stream):
+                for line in iter(stream._impl.readline, b""):
+                    q.put((stream._name, line.decode(stream.default_encoding)))
+                q.put(None)
+
+            threads = [threading.Thread(target=_reader, args=(s,)) for s in streams]
+            for t in threads:
+                t.daemon = True
+                t.start()
+
+            active = len(threads)
+            while active:
+                try:
+                    item = q.get(timeout=timeout)
+                except queue.Empty:
+                    if proc.poll() is not None and all(
+                        not t.is_alive() for t in threads
+                    ):
+                        break
+                    continue
+                if item is None:
+                    active -= 1
+                    continue
+                name, text = item
+                now = datetime.datetime.now().isoformat()
+                result[name].append(text.rstrip())
+                msg = f"{name} {now}:{text.rstrip()}"
+                result["merged"].append(msg)
+                iflogger.info(msg)
+
+            for t in threads:
+                t.join()
+        else:
+            # POSIX path: use select() to wait for activity on stdout/stderr
+            # and read incrementally so output can be logged in real time.
+            def _process(drain=0):
+                try:
+                    res = select.select(streams, [], [], timeout)
+                except OSError as e:
+                    iflogger.info(e)
+                    if e.errno == errno.EINTR:
+                        return
+                    else:
+                        raise
                 else:
-                    raise
-            else:
-                for stream in res[0]:
-                    stream.read(drain)
+                    for stream in res[0]:
+                        stream.read(drain)
 
-        while proc.returncode is None:
-            proc.poll()
-            _process()
+            while proc.returncode is None:
+                proc.poll()
+                _process()
 
-        _process(drain=1)
+            _process(drain=1)
 
-        # collect results, merge and return
-        result = {}
-        temp = []
-        for stream in streams:
-            rows = stream._rows
-            temp += rows
-            result[stream._name] = [r[2] for r in rows]
-        temp.sort()
-        result["merged"] = [r[1] for r in temp]
+            # collect results, merge and return
+            temp = []
+            for stream in streams:
+                rows = stream._rows
+                temp += rows
+                result[stream._name] = [r[2] for r in rows]
+            temp.sort()
+            result["merged"] = [r[1] for r in temp]
 
     if output.startswith("file"):
         proc.wait()
