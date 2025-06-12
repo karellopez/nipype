@@ -34,7 +34,11 @@ def test_search_files(tmp_path, fname, extension, search_crop):
 
 
 def test_parse_stdout_windows_path():
-    """Ensure _parse_stdout handles backslash-separated paths."""
+    """Ensure ``_parse_stdout`` correctly parses Windows-style paths."""
+
+    # ``dcm2niix`` may emit paths using backslashes when running on Windows.
+    # This test mimics such output to verify the regex accepts the backslash
+    # separator and the resulting path is normalized correctly.
     dcm = dcm2nii.Dcm2niix()
     line = "Convert 1 C:\\data\\file.nii"
     paths = dcm._parse_stdout(line)

@@ -125,14 +125,18 @@ def run_command(runtime, output=None, timeout=0.01, write_cmdline=False):
         streams = [Stream("stdout", proc.stdout), Stream("stderr", proc.stderr)]
 
         if os.name == "nt":
-            # select.select() does not work with regular pipes on Windows.
-            # Use a small reader thread per stream to push data into a queue
-            # so we can poll for updates similar to the POSIX implementation.
+            # ``select.select()`` is limited to sockets on Windows and
+            # therefore cannot be used with the regular pipes returned by
+            # ``Popen``.  To emulate non-blocking reads we spin up a small
+            # thread per stream.  Each thread pushes incoming lines onto a
+            # ``Queue`` which is then polled in the loop below.
             q = queue.Queue()
 
             def _reader(stream):
                 for line in iter(stream._impl.readline, b""):
                     q.put((stream._name, line.decode(stream.default_encoding)))
+                # ``None`` indicates the thread finished reading this stream
+                # and allows the main loop to know when all threads are done.
                 q.put(None)
 
             threads = [threading.Thread(target=_reader, args=(s,)) for s in streams]
@@ -141,6 +145,9 @@ def run_command(runtime, output=None, timeout=0.01, write_cmdline=False):
                 t.start()
 
             active = len(threads)
+            # Poll the queue until each reader thread has finished.  The
+            # ``timeout`` parameter matches the behaviour of ``select`` on
+            # POSIX systems by preventing indefinite blocking.
             while active:
                 try:
                     item = q.get(timeout=timeout)

@@ -453,9 +453,18 @@ class Dcm2niix(CommandLine):
         return runtime
 
     def _parse_stdout(self, stdout):
+        """Extract generated file paths from ``dcm2niix`` output.
+
+        ``dcm2niix`` reports each produced file using the ``Convert`` prefix
+        followed by a path.  Historically this path used forward slashes, but
+        on Windows backslashes may be emitted instead.  The regular expression
+        below therefore accepts either separator so that both ``C:\path`` and
+        ``/path`` style strings are recognized.
+        """
+
         filenames = []
         for line in stdout.split("\n"):
-            if line.startswith("Convert "):  # output
+            if line.startswith("Convert "):  # output line with a path
                 # Accept both forward and backslashes so Windows paths are
                 # correctly captured when parsing the converter output.
                 match = re.search(r"\S+[\\/]\S+", line)
