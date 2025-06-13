@@ -464,13 +464,13 @@ class Dcm2niix(CommandLine):
 
         filenames = []
         for line in stdout.split("\n"):
-            if line.startswith("Convert "):  # output line with a path
+            if line.startswith("Convert "):
                 # Accept both forward and backslashes so Windows paths are
                 # correctly captured when parsing the converter output.
                 match = re.search(r"\S+[\\/]\S+", line)
                 if match:
-                    fname = str(match.group(0))
-                    filenames.append(os.path.abspath(fname))
+                    fname = os.path.abspath(str(match.group(0)))
+                    filenames.append(os.path.normpath(fname))
         return filenames
 
     def _parse_files(self, filenames):
@@ -495,9 +495,14 @@ class Dcm2niix(CommandLine):
                 elif fl.endswith((".json", ".txt")):
                     bids.append(fl)
 
-        # in siemens mosaic conversion nipype misread dcm2niix output and generate a duplicate list of results
-        # next line remove duplicates from output files array
-        outfiles = list(dict.fromkeys(outfiles))
+        # remove duplicates
+        if os.name == "nt":
+            uniq = {}
+            for f in outfiles:
+                uniq[f.lower()] = f
+            outfiles = list(uniq.values())
+        else:
+            outfiles = list(dict.fromkeys(outfiles))
 
         self.output_files = outfiles
         self.bvecs = bvecs
