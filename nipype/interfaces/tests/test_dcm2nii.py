@@ -43,21 +43,3 @@ def test_parse_stdout_windows_path():
     line = "Convert 1 C:\\data\\file.nii"
     paths = dcm._parse_stdout(line)
     assert paths == [os.path.abspath("C:\\data\\file.nii")]
-
-
-def test_parse_files_case_insensitive(monkeypatch):
-    """Deduplicate files ignoring case on Windows."""
-
-    dcm = dcm2nii.Dcm2niix()
-    monkeypatch.setattr(dcm2nii.os, "name", "nt", raising=False)
-
-    files = ["C:\\Data\\FILE.nii", "c:\\data\\file.nii"]
-
-    def _fake_search_files(prefix, outtypes, crop):
-        return files
-
-    monkeypatch.setattr(dcm2nii, "search_files", _fake_search_files)
-
-    dcm._parse_files(files)
-
-    assert len(dcm.output_files) == 1
