@@ -54,6 +54,7 @@ CLASSIFIERS = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -71,6 +72,17 @@ description = "Neuroimaging in Python: Pipelines and Interfaces"
 long_description = """========================================================
 NIPYPE: Neuroimaging in Python: Pipelines and Interfaces
 ========================================================
+
+## About this fork
+
+This is **not the official version of Nipype**.
+It is a tailored fork created at the *Applied Neurocognitive Psychology Lab* to address specific needs related to local deployment and file management.
+
+This version introduces **enhanced compatibility with Windows systems** and **removes certain file-writing restrictions** that limited flexibility in custom pipelines and graphical interfaces. This fork completely solves the missing sub process handling  for windows systems. This is for the people who want to use HeudiConv in Windows through our BIDS-Manager tool. 
+
+The original Nipype project was developed by a large community of contributors, and full credit is due to them. This fork is distributed under the same [Apache 2.0 License](LICENSE) and is intended for internal workflows and specialized environments.
+
+## Original readme
 
 Current neuroimaging software offer users an incredible opportunity to
 analyze data using a variety of different algorithms. However, this has
@@ -113,15 +125,15 @@ CLICK_MIN_VERSION = "6.6.0"
 PYDOT_MIN_VERSION = "1.2.3"
 
 NAME = "nipype"
-MAINTAINER = "nipype developers"
-MAINTAINER_EMAIL = "neuroimaging@python.org"
+MAINTAINER = "Karel López Vilaret"
+MAINTAINER_EMAIL = "karel.mauricio.lopez.vilaret@uni-oldenburg.de"
 DESCRIPTION = description
 LONG_DESCRIPTION = long_description
 URL = "http://nipy.org/nipype"
 DOWNLOAD_URL = "http://github.com/nipy/nipype/archives/master"
 LICENSE = "Apache License, 2.0"
-AUTHOR = "nipype developers"
-AUTHOR_EMAIL = "neuroimaging@python.org"
+AUTHOR = "Karel López Vilaret"
+AUTHOR_EMAIL = "karel.mauricio.lopez.vilaret@uni-oldenburg.de"
 PLATFORMS = "OS Independent"
 MAJOR = __version__.split(".")[0]
 MINOR = __version__.split(".")[1]

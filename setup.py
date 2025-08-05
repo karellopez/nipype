@@ -114,7 +114,7 @@ def main():
         exec(infofile.read(), globals(), ldict)
 
     setup(
-        name=ldict["NAME"],
+        name="nipype-ancp",
         maintainer=ldict["MAINTAINER"],
         maintainer_email=ldict["MAINTAINER_EMAIL"],
         description=ldict["DESCRIPTION"],
@@ -127,7 +127,7 @@ def main():
         author=ldict["AUTHOR"],
         author_email=ldict["AUTHOR_EMAIL"],
         platforms=ldict["PLATFORMS"],
-        version=ldict["VERSION"],
+        version="0.1.0",
         python_requires=ldict["PYTHON_REQUIRES"],
         install_requires=ldict["REQUIRES"],
         provides=ldict["PROVIDES"],
